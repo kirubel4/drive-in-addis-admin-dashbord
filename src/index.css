@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-canvas text-ink-900 font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  * {
+    @apply border-border;
+  }
+  :focus-visible {
+    outline: 2px solid #5B5BD6;
+    outline-offset: 2px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4D4D8;
+  border-radius: 999px;
+  border: 2px solid #FAFAFA;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
