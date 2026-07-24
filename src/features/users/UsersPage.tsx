@@ -1,69 +1,114 @@
-import { useMemo, useState } from 'react'
-import { Search, Users as UsersIcon, Trash2, ShieldCheck, ShieldX, Pencil, Check, X, Ban, UserCheck } from 'lucide-react'
-import { Card } from '../../components/ui/Card'
-import { Table, Thead, Th, Tr, Td, SkeletonRow, EmptyState } from '../../components/ui/Table'
-import { Badge } from '../../components/ui/Badge'
-import { Input } from '../../components/ui/Input'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { useDeleteUser, useUpdateUserRole, useUpdateUserStatus, useUsers } from './hooks'
-import type { AdminUser, Role } from '../../types'
+import { useMemo, useState } from "react";
+import {
+  Search,
+  Users as UsersIcon,
+  Trash2,
+  ShieldCheck,
+  ShieldX,
+  Check,
+  X,
+  Ban,
+  UserCheck,
+} from "lucide-react";
+import { Card } from "../../components/ui/Card";
+import {
+  Table,
+  Thead,
+  Th,
+  Tr,
+  Td,
+  SkeletonRow,
+  EmptyState,
+} from "../../components/ui/Table";
+import { Badge } from "../../components/ui/Badge";
+import { Input, Select, Label } from "../../components/ui/Input";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { Dialog } from "../../components/ui/Dialog";
+import {
+  useDeleteUser,
+  useUpdateUser,
+  useUpdateUserRole,
+  useUpdateUserStatus,
+  useUsers,
+} from "./hooks";
+import type { AdminUser, Role } from "../../types";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export function UsersPage() {
-  const { data: users, isLoading } = useUsers()
-  const updateRole = useUpdateUserRole()
-  const updateStatus = useUpdateUserStatus()
-  const deleteUser = useDeleteUser()
-  const [query, setQuery] = useState('')
-  const [toDelete, setToDelete] = useState<AdminUser | null>(null)
-  const [editingUser, setEditingUser] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<Partial<AdminUser>>({})
+  const { data: users, isLoading } = useUsers();
+  const updateRole = useUpdateUserRole();
+  const updateStatus = useUpdateUserStatus();
+  const updateUser = useUpdateUser();
+  const deleteUser = useDeleteUser();
+  const [query, setQuery] = useState("");
+  const [toDelete, setToDelete] = useState<AdminUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [detailForm, setDetailForm] = useState<Partial<AdminUser>>({});
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return users ?? []
-    const q = query.toLowerCase()
-    return (users ?? []).filter((u) =>
-      u.name.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      u.role.toLowerCase().includes(q)
-    )
-  }, [users, query])
+    if (!query.trim()) return users ?? [];
+    const q = query.toLowerCase();
+    return (users ?? []).filter(
+      (u) =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.role.toLowerCase().includes(q),
+    );
+  }, [users, query]);
 
-  const handleEdit = (user: AdminUser) => {
-    setEditingUser(user.id)
-    setEditForm({ name: user.name, email: user.email })
-  }
+  const handleRowClick = (user: AdminUser) => {
+    setSelectedUser(user);
+    setDetailForm({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+    });
+  };
 
-  const handleSave = async (user: AdminUser) => {
-    // If you have an updateUser mutation, call it here with editForm
-    // For now, we just close the edit mode
-    setEditingUser(null)
-    setEditForm({})
-  }
+  const handleSaveDetail = async () => {
+    if (!selectedUser) return;
+    await updateUser.mutateAsync({
+      id: selectedUser.id,
+      patch: detailForm as Partial<
+        Pick<AdminUser, "name" | "email" | "role" | "isActive">
+      >,
+    });
+    setSelectedUser(null);
+    setDetailForm({});
+  };
 
-  const handleCancel = () => {
-    setEditingUser(null)
-    setEditForm({})
-  }
+  const handleCloseDetail = () => {
+    setSelectedUser(null);
+    setDetailForm({});
+  };
 
   const handleBan = (user: AdminUser) => {
-    updateStatus.mutate({ id: user.id, isActive: false })
-  }
+    updateStatus.mutate({ id: user.id, isActive: false });
+  };
 
   const handleUnban = (user: AdminUser) => {
-    updateStatus.mutate({ id: user.id, isActive: true })
-  }
+    updateStatus.mutate({ id: user.id, isActive: true });
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink-900">Users</h1>
-          <p className="text-sm text-ink-500 mt-1">Manage user accounts, roles, and access.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-ink-900">
+            Users
+          </h1>
+          <p className="text-sm text-ink-500 mt-1">
+            Manage user accounts, roles, and access.
+          </p>
         </div>
         <div className="relative w-full max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
@@ -83,7 +128,9 @@ export function UsersPage() {
             <UsersIcon className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-ink-900">{users?.length ?? 0}</p>
+            <p className="text-2xl font-bold text-ink-900">
+              {users?.length ?? 0}
+            </p>
             <p className="text-sm text-ink-500">Total Users</p>
           </div>
         </Card>
@@ -126,133 +173,120 @@ export function UsersPage() {
             </tr>
           </Thead>
           <tbody>
-            {isLoading && Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} cols={7} />)}
+            {isLoading &&
+              Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonRow key={i} cols={7} />
+              ))}
             {!isLoading && filtered.length === 0 && (
               <tr>
                 <td colSpan={7}>
-                  <EmptyState icon={UsersIcon} title="No users found" description="Try a different search term." />
+                  <EmptyState
+                    icon={UsersIcon}
+                    title="No users found"
+                    description="Try a different search term."
+                  />
                 </td>
               </tr>
             )}
-            {filtered.map((user, index) => {
-              const isEditing = editingUser === user.id
-              return (
-                <Tr key={user.id} className={!user.isActive ? 'opacity-60' : ''}>
-                  <Td className="text-ink-400 text-sm">{index + 1}</Td>
-                  <Td>
-                    {isEditing ? (
-                      <div className="space-y-2">
-                        <Input
-                          value={editForm.name ?? ''}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                          placeholder="Name"
-                          className="h-8 text-sm"
-                        />
-                        <Input
-                          value={editForm.email ?? ''}
-                          onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
-                          placeholder="Email"
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="font-medium text-ink-900">{user.name}</p>
-                          <p className="text-xs text-ink-500">{user.email}</p>
-                        </div>
-                      </div>
-                    )}
-                  </Td>
-                  <Td>
-                    <select
-                      value={user.role}
-                      onChange={(e) => updateRole.mutate({ id: user.id, role: e.target.value as Role })}
-                      disabled={updateRole.isPending}
-                      className="h-8 w-28 rounded-md border border-ink-200 bg-surface px-2 text-[13px] text-ink-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 cursor-pointer"
-                    >
-                      <option value="ADMIN">Admin</option>
-                      <option value="USER">User</option>
-                      <option value="MODERATOR">Moderator</option>
-                    </select>
-                  </Td>
-                  <Td>
-                    {user.isActive ? (
-                      <Badge tone="success" dot>Active</Badge>
-                    ) : (
-                      <Badge tone="danger" dot>Banned</Badge>
-                    )}
-                  </Td>
-                  <Td>
-                    <Badge tone={user.isVerified ? 'success' : 'neutral'}>
-                      {user.isVerified ? 'Verified' : 'Unverified'}
-                    </Badge>
-                  </Td>
-                  <Td className="text-ink-500 text-sm">{formatDate(user.createdAt)}</Td>
-                  <Td>
-                    <div className="flex items-center justify-end gap-1">
-                      {isEditing ? (
-                        <>
-                          <button
-                            className="rounded-md p-1.5 text-success hover:bg-success/10"
-                            onClick={() => handleSave(user)}
-                            title="Save"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            className="rounded-md p-1.5 text-ink-400 hover:bg-ink-100"
-                            onClick={handleCancel}
-                            title="Cancel"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="rounded-md p-1.5 text-ink-400 hover:bg-primary/10 hover:text-primary"
-                            onClick={() => handleEdit(user)}
-                            title="Edit user"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          {user.isActive ? (
-                            <button
-                              className="rounded-md p-1.5 text-ink-400 hover:bg-warning/10 hover:text-warning"
-                              onClick={() => handleBan(user)}
-                              disabled={updateStatus.isPending}
-                              title="Ban user"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </button>
-                          ) : (
-                            <button
-                              className="rounded-md p-1.5 text-ink-400 hover:bg-success/10 hover:text-success"
-                              onClick={() => handleUnban(user)}
-                              disabled={updateStatus.isPending}
-                              title="Unban user"
-                            >
-                              <UserCheck className="h-4 w-4" />
-                            </button>
-                          )}
-                          <button
-                            className="rounded-md p-1.5 text-ink-400 hover:bg-danger/10 hover:text-danger"
-                            onClick={() => setToDelete(user)}
-                            title="Delete user"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
+            {filtered.map((user, index) => (
+              <Tr
+                key={user.id}
+                className={
+                  !user.isActive
+                    ? "opacity-60 hover:bg-surface-50 cursor-pointer"
+                    : "hover:bg-surface-50 cursor-pointer"
+                }
+                onClick={() => handleRowClick(user)}
+              >
+                <Td className="text-ink-400 text-sm">{index + 1}</Td>
+                <Td>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                      {user.name.charAt(0).toUpperCase()}
                     </div>
-                  </Td>
-                </Tr>
-              )
-            })}
+                    <div>
+                      <p className="font-medium text-ink-900">{user.name}</p>
+                      <p className="text-xs text-ink-500">{user.email}</p>
+                    </div>
+                  </div>
+                </Td>
+                <Td>
+                  <select
+                    value={user.role}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      updateRole.mutate({
+                        id: user.id,
+                        role: e.target.value as Role,
+                      });
+                    }}
+                    disabled={updateRole.isPending}
+                    className="h-8 w-28 rounded-md border border-ink-200 bg-surface px-2 text-[13px] text-ink-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 cursor-pointer"
+                  >
+                    <option value="ADMIN">Admin</option>
+                    <option value="USER">User</option>
+                  </select>
+                </Td>
+                <Td>
+                  {user.isActive ? (
+                    <Badge tone="success" dot>
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge tone="danger" dot>
+                      Banned
+                    </Badge>
+                  )}
+                </Td>
+                <Td>
+                  <Badge tone={user.isVerified ? "success" : "neutral"}>
+                    {user.isVerified ? "Verified" : "Unverified"}
+                  </Badge>
+                </Td>
+                <Td className="text-ink-500 text-sm">
+                  {formatDate(user.createdAt)}
+                </Td>
+                <Td>
+                  <div className="flex items-center justify-end gap-1">
+                    {user.isActive ? (
+                      <button
+                        className="rounded-md p-1.5 text-ink-400 hover:bg-warning/10 hover:text-warning"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBan(user);
+                        }}
+                        disabled={updateStatus.isPending}
+                        title="Ban user"
+                      >
+                        <Ban className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        className="rounded-md p-1.5 text-ink-400 hover:bg-success/10 hover:text-success"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnban(user);
+                        }}
+                        disabled={updateStatus.isPending}
+                        title="Unban user"
+                      >
+                        <UserCheck className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button
+                      className="rounded-md p-1.5 text-ink-400 hover:bg-danger/10 hover:text-danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setToDelete(user);
+                      }}
+                      title="Delete user"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </Td>
+              </Tr>
+            ))}
           </tbody>
         </Table>
       </Card>
@@ -265,11 +299,11 @@ export function UsersPage() {
         onCancel={() => setToDelete(null)}
         loading={deleteUser.isPending}
         onConfirm={async () => {
-          if (!toDelete) return
-          await deleteUser.mutateAsync(toDelete.id)
-          setToDelete(null)
+          if (!toDelete) return;
+          await deleteUser.mutateAsync(toDelete.id);
+          setToDelete(null);
         }}
       />
     </div>
-  )
+  );
 }

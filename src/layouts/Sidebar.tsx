@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Route as RouteIcon, Gauge, ShieldAlert, Users, Settings, PanelLeftClose, PanelLeftOpen,
+  LayoutDashboard, Route as RouteIcon, Gauge, ShieldAlert, Users, Settings, PanelLeftClose, PanelLeftOpen,Flag,
 } from 'lucide-react'
 import { cn } from '../lib/cn'
 
@@ -10,7 +10,9 @@ const navItems = [
   { to: '/speed-limits', label: 'Speed Limits', icon: Gauge },
   { to: '/zones', label: 'Zones', icon: ShieldAlert },
   { to: '/users', label: 'Users', icon: Users },
+  { to: '/reports', label: 'Reports', icon: Flag},
   { to: '/settings', label: 'Settings', icon: Settings },
+  
 ]
 
 interface SidebarProps {

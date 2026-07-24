@@ -1,72 +1,121 @@
-import { apiClient } from './client'
-import type { AdminStats, AdminUser, ActivityItem, RequestVolumePoint, Role } from '../types'
-import { MOCK_API, mockActivity, mockRequestVolume, mockResolve, mockStats, mockUsers } from './mock'
+import { apiClient } from "./client";
+import type {
+  AdminStats,
+  AdminUser,
+  ActivityItem,
+  RequestVolumePoint,
+  Role,
+} from "../types";
+import {
+  MOCK_API,
+  mockActivity,
+  mockRequestVolume,
+  mockResolve,
+  mockStats,
+  mockUsers,
+} from "./mock";
 
 export async function fetchStats(): Promise<AdminStats> {
-  if (MOCK_API) return mockResolve(mockStats)
-  const { data } = await apiClient.get<AdminStats>('/admin/status')
-  return data
+  if (MOCK_API) return mockResolve(mockStats);
+  const { data } = await apiClient.get<AdminStats>("/admin/status");
+  return data;
 }
 
 export async function fetchRequestsToday(): Promise<number> {
-  if (MOCK_API) return mockResolve(mockRequestVolume[mockRequestVolume.length - 1].requests)
-  const { data } = await apiClient.get<{ count: number }>('/admin/stats/requests-today')
-  return data.count
+  if (MOCK_API)
+    return mockResolve(
+      mockRequestVolume[mockRequestVolume.length - 1].requests,
+    );
+  const { data } = await apiClient.get<{ count: number }>(
+    "/admin/stats/requests-today",
+  );
+  return data.count;
 }
 
 export async function fetchRequestVolume(): Promise<RequestVolumePoint[]> {
-  if (MOCK_API) return mockResolve(mockRequestVolume)
-  const { data } = await apiClient.get<RequestVolumePoint[]>('/admin/stats/request-volume')
-  return data
+  if (MOCK_API) return mockResolve(mockRequestVolume);
+  const { data } = await apiClient.get<RequestVolumePoint[]>(
+    "/admin/stats/request-volume",
+  );
+  return data;
 }
 
 export async function fetchActivity(): Promise<ActivityItem[]> {
-  if (MOCK_API) return mockResolve(mockActivity)
-  const { data } = await apiClient.get<ActivityItem[]>('/admin/activity')
-  return data
+  if (MOCK_API) return mockResolve(mockActivity);
+  const { data } = await apiClient.get<ActivityItem[]>("/admin/activity");
+  return data;
 }
 
 export async function pingHealth(): Promise<boolean> {
-  if (MOCK_API) return mockResolve(true)
+  if (MOCK_API) return mockResolve(true);
   try {
-    await apiClient.get('/health')
-    return true
+    await apiClient.get("/health");
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
 export async function fetchUsers(): Promise<AdminUser[]> {
-  if (MOCK_API) return mockResolve(mockUsers)
-  const { data } = await apiClient.get<AdminUser[]>('/admin/users')
-  return data
+  if (MOCK_API) return mockResolve(mockUsers);
+  const { data } = await apiClient.get<AdminUser[]>("/admin/users");
+  return data;
 }
 
-export async function updateUserRole(id: string, role: Role): Promise<AdminUser> {
+export async function updateUserRole(
+  id: string,
+  role: Role,
+): Promise<AdminUser> {
   if (MOCK_API) {
-    const user = mockUsers.find((u) => u.id === id)
-    if (user) user.role = role
-    return mockResolve(user as AdminUser)
+    const user = mockUsers.find((u) => u.id === id);
+    if (user) user.role = role;
+    return mockResolve(user as AdminUser);
   }
-  const { data } = await apiClient.patch<AdminUser>(`/admin/users/${id}/role`, { role })
-  return data
+  const { data } = await apiClient.patch<AdminUser>(`/admin/users/${id}/role`, {
+    role,
+  });
+  return data;
 }
 
-export async function updateUserStatus(id: string, isActive: boolean): Promise<AdminUser> {
+export async function updateUserStatus(
+  id: string,
+  isActive: boolean,
+): Promise<AdminUser> {
   if (MOCK_API) {
-    const user = mockUsers.find((u) => u.id === id)
-    if (user) user.isActive = isActive
-    return mockResolve(user as AdminUser)
+    const user = mockUsers.find((u) => u.id === id);
+    if (user) user.isActive = isActive;
+    return mockResolve(user as AdminUser);
   }
-  const { data } = await apiClient.patch<AdminUser>(`/admin/users/${id}/status`, { isActive })
-  return data
+  const { data } = await apiClient.patch<AdminUser>(
+    `/admin/users/${id}/status`,
+    { isActive },
+  );
+  return data;
+}
+
+export async function updateUser(
+  id: string,
+  patch: Partial<Pick<AdminUser, "name" | "email" | "role" | "isActive">>,
+): Promise<AdminUser> {
+  if (MOCK_API) {
+    const user = mockUsers.find((u) => u.id === id);
+    if (user) {
+      Object.assign(user, patch);
+    }
+    return mockResolve(user as AdminUser);
+  }
+  const { data } = await apiClient.patch<AdminUser>(
+    `/admin/users/${id}`,
+    patch,
+  );
+  return data;
 }
 
 export async function deleteUser(id: string): Promise<void> {
   if (MOCK_API) {
-    const idx = mockUsers.findIndex((u) => u.id === id)
-    if (idx >= 0) mockUsers.splice(idx, 1)
-    return mockResolve(undefined)
+    const idx = mockUsers.findIndex((u) => u.id === id);
+    if (idx >= 0) mockUsers.splice(idx, 1);
+    return mockResolve(undefined);
   }
-  await apiClient.delete(`/admin/users/${id}`)
+  await apiClient.delete(`/admin/users/${id}`);
 }

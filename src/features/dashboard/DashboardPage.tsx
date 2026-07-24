@@ -1,22 +1,47 @@
-import { Route as RouteIcon, Activity as ActivityIcon, Users, UserCheck } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
-import { StatCard } from './StatCard'
-import { RequestVolumeChart } from './RequestVolumeChart'
-import { ActivityFeed } from './ActivityFeed'
-import { useActivity, useHealth, useRequestVolume, useRequestsToday, useRoadsCount, useStats } from './hooks'
+import {
+  Route as RouteIcon,
+  Activity as ActivityIcon,
+  Users,
+  UserCheck,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/Card";
+import { StatCard } from "./StatCard";
+import { RequestVolumeChart } from "./RequestVolumeChart";
+import { ActivityFeed } from "./ActivityFeed";
+import {
+  useActivity,
+  useHealth,
+  useRequestVolume,
+  useRequestsToday,
+  useRoadsCount,
+  useStats,
+} from "./hooks";
+import { useReportAnalytics } from "../reports/hooks";
+import { BarChart3 } from "lucide-react";
 
 export function DashboardPage() {
-  const stats = useStats()
-  const roadsCount = useRoadsCount()
-  const requestsToday = useRequestsToday()
-  const volume = useRequestVolume()
-  const health = useHealth()
-  const activity = useActivity()
+  const stats = useStats();
+  const roadsCount = useRoadsCount();
+  const requestsToday = useRequestsToday();
+  const volume = useRequestVolume();
+  const health = useHealth();
+  const activity = useActivity();
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Total Roads" value={roadsCount.data ?? 0} icon={RouteIcon} loading={roadsCount.isLoading} accent />
+        <StatCard
+          label="Total Roads"
+          value={roadsCount.data ?? 0}
+          icon={RouteIcon}
+          loading={roadsCount.isLoading}
+          accent
+        />
         <StatCard
           label="Daily Requests"
           value={(requestsToday.data ?? 0).toLocaleString()}
@@ -32,19 +57,28 @@ export function DashboardPage() {
           ) : (
             <div className="mt-1.5 flex items-center gap-2">
               <span
-                className={`h-2.5 w-2.5 rounded-full ${health.data ? 'bg-success animate-pulseDot' : 'bg-danger'}`}
+                className={`h-2.5 w-2.5 rounded-full ${health.data ? "bg-success animate-pulseDot" : "bg-danger"}`}
               />
-              <span className="text-lg font-semibold text-ink-900">{health.data ? 'Operational' : 'Down'}</span>
+              <span className="text-lg font-semibold text-ink-900">
+                {health.data ? "Operational" : "Down"}
+              </span>
             </div>
           )}
         </div>
-        <StatCard label="Total Users" value={stats.data?.totalUsers ?? 0} icon={Users} loading={stats.isLoading} />
+        <StatCard
+          label="Total Users"
+          value={stats.data?.totalUsers ?? 0}
+          icon={Users}
+          loading={stats.isLoading}
+        />
         <StatCard
           label="Active Users"
           value={stats.data?.activeUsers ?? 0}
           icon={UserCheck}
           loading={stats.isLoading}
         />
+        {/* Reports quick stats */}
+        <ReportsStats />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -67,5 +101,26 @@ export function DashboardPage() {
         </Card>
       </div>
     </div>
-  )
+  );
+}
+
+function ReportsStats() {
+  const analytics = useReportAnalytics();
+  const data = analytics.data;
+  return (
+    <>
+      <StatCard
+        label="Reports"
+        value={data?.summary.totalReports ?? 0}
+        icon={BarChart3}
+        loading={analytics.isLoading}
+      />
+      <StatCard
+        label="Verified Reports"
+        value={data?.summary.verifiedReports ?? 0}
+        icon={BarChart3}
+        loading={analytics.isLoading}
+      />
+    </>
+  );
 }
