@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { loadGoogleMaps } from "../../lib/googleMaps";
 
 export interface PreviewSegment {
@@ -8,6 +9,8 @@ export interface PreviewSegment {
   endLat: number;
   endLng: number;
 }
+
+const FALLBACK_CENTER = { lat: 8.9806, lng: 38.7578 };
 
 export function SegmentMapPreview({
   segments,
@@ -19,18 +22,21 @@ export function SegmentMapPreview({
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any | null>(null);
   const overlaysRef = useRef<any[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
     if (!ref.current) return;
     let mounted = true;
+    setStatus("loading");
     loadGoogleMaps()
-      .then((g) => {
+      .then(() => {
         if (!mounted || !ref.current) return;
         const google = (window as any).google;
         if (!mapRef.current) {
           mapRef.current = new google.maps.Map(ref.current, {
             zoomControl: true,
-            center: { lat: 8.9806, lng: 38.7578 },
+            center: FALLBACK_CENTER,
             zoom: 12,
           });
         }
@@ -48,8 +54,10 @@ export function SegmentMapPreview({
             Number.isFinite(s.endLng),
         );
 
+        setStatus("ready");
+
         if (valid.length === 0) {
-          map.setCenter({ lat: 8.9806, lng: 38.7578 });
+          map.setCenter(FALLBACK_CENTER);
           map.setZoom(12);
           return;
         }
@@ -102,7 +110,12 @@ export function SegmentMapPreview({
           map.fitBounds(bounds);
         }
       })
-      .catch((err) => console.error("Google Maps failed to load", err));
+      .catch((err) => {
+        if (!mounted) return;
+        console.error("Google Maps failed to load", err);
+        setErrorMessage(err?.message || "Failed to load Google Maps");
+        setStatus("error");
+      });
     return () => {
       mounted = false;
     };
@@ -119,9 +132,23 @@ export function SegmentMapPreview({
 
   return (
     <div
-      ref={ref}
+      className="relative w-full overflow-hidden rounded-md border border-border"
       style={{ height }}
-      className="w-full rounded-md border border-border"
-    />
+    >
+      <div ref={ref} className="h-full w-full" />
+      {status === "loading" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/90 text-ink-500">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <p className="text-sm">Loading map…</p>
+        </div>
+      )}
+      {status === "error" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white p-4 text-center">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <p className="text-xs font-medium text-ink-700">Map couldn't load</p>
+          <p className="max-w-xs text-[11px] text-ink-500">{errorMessage}</p>
+        </div>
+      )}
+    </div>
   );
 }

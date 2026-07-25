@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Plus, Trash2, MapPin } from "lucide-react";
+import { Plus, Trash2, MapPin, AlertTriangle, Loader2 } from "lucide-react";
 import { Dialog } from "../../components/ui/Dialog";
 import { Button } from "../../components/ui/Button";
 import { Input, Label } from "../../components/ui/Input";
@@ -44,17 +44,20 @@ export function CreateRoadDialog({
   const [clickMode, setClickMode] = useState<"start" | "end">("start");
 
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any | null>(null);
+  const googleMapRef = useRef<any | null>(null);
   const markersRef = useRef<any[]>([]);
   const polylinesRef = useRef<any[]>([]);
+  const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [mapError, setMapError] = useState<string>("");
 
   const createRoad = useCreateRoad();
   const activeSegment = segments[activeIndex];
 
   // Initialize Google map
   useEffect(() => {
-    if (!open || !mapRef.current || mapInstanceRef.current) return;
+    if (!open || !mapRef.current || googleMapRef.current) return;
     let mounted = true;
+    setMapStatus("loading");
     loadGoogleMaps()
       .then((g) => {
         if (!mounted || !mapRef.current) return;
@@ -81,27 +84,33 @@ export function CreateRoadDialog({
           });
         });
 
-        mapInstanceRef.current = map;
+        googleMapRef.current = map;
+        setMapStatus("ready");
         updateMapMarkers();
       })
-      .catch((err) => console.error("Google Maps failed to load", err));
+      .catch((err) => {
+        if (!mounted) return;
+        console.error("Google Maps failed to load", err);
+        setMapError(err?.message || "Failed to load Google Maps");
+        setMapStatus("error");
+      });
 
     return () => {
       mounted = false;
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current = null;
+      if (googleMapRef.current) {
+        googleMapRef.current = null;
       }
     };
   }, [open]);
 
   // Update markers when segments change
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (!googleMapRef.current) return;
     updateMapMarkers();
   }, [segments, activeIndex]);
 
   function updateMapMarkers() {
-    const map = mapInstanceRef.current;
+    const map = googleMapRef.current;
     if (!map || typeof window === "undefined" || !(window as any).google)
       return;
 
@@ -372,8 +381,21 @@ export function CreateRoadDialog({
                 : `Click map to set END for ${activeSegment?.label}`}
             </span>
           </div>
-          <div className="overflow-hidden rounded-lg border border-border">
+          <div className="relative overflow-hidden rounded-lg border border-border">
             <div ref={mapRef} style={{ width: "100%", height: "400px" }} />
+            {mapStatus === "loading" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/90 text-ink-500">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <p className="text-sm">Loading map…</p>
+              </div>
+            )}
+            {mapStatus === "error" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white p-6 text-center">
+                <AlertTriangle className="h-6 w-6 text-amber-500" />
+                <p className="text-sm font-medium text-ink-700">Map couldn't load</p>
+                <p className="max-w-xs text-xs text-ink-500">{mapError}</p>
+              </div>
+            )}
           </div>
           <p className="mt-1.5 text-[11px] text-ink-400">
             💡 Click a segment card to select it. Click the map to place Start →

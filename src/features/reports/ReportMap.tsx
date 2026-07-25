@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { REPORT_TYPE_COLORS, REPORT_TYPE_LABELS } from "./types";
 import type { Report } from "./types";
 import { loadGoogleMaps } from "../../lib/googleMaps";
@@ -8,11 +9,14 @@ export function ReportMap({ reports }: { reports: Report[] }) {
   const mapRef = useRef<any | null>(null);
   const markersRef = useRef<any[]>([]);
   const infoRef = useRef<any[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
     let mounted = true;
     if (!containerRef.current || mapRef.current) return;
 
+    setStatus("loading");
     loadGoogleMaps()
       .then((g) => {
         if (!mounted || !containerRef.current) return;
@@ -21,10 +25,13 @@ export function ReportMap({ reports }: { reports: Report[] }) {
           zoom: 13,
         });
         mapRef.current = map;
+        setStatus("ready");
       })
       .catch((err) => {
-        // eslint-disable-next-line no-console
+        if (!mounted) return;
         console.error("Google Maps failed to load", err);
+        setErrorMessage(err?.message || "Failed to load Google Maps");
+        setStatus("error");
       });
 
     return () => {
@@ -89,10 +96,24 @@ export function ReportMap({ reports }: { reports: Report[] }) {
   }, [reports]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: "100%", height: "400px" }}
-      className="rounded-lg border border-border"
-    />
+    <div className="relative overflow-hidden rounded-lg border border-border">
+      <div
+        ref={containerRef}
+        style={{ width: "100%", height: "400px" }}
+      />
+      {status === "loading" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/90 text-ink-500">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <p className="text-sm">Loading map…</p>
+        </div>
+      )}
+      {status === "error" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white p-6 text-center">
+          <AlertTriangle className="h-6 w-6 text-amber-500" />
+          <p className="text-sm font-medium text-ink-700">Map couldn't load</p>
+          <p className="max-w-xs text-xs text-ink-500">{errorMessage}</p>
+        </div>
+      )}
+    </div>
   );
 }
