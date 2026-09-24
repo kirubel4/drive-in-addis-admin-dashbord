@@ -15,7 +15,7 @@ The app runs entirely on **mock data** by default so you can preview every scree
 
 1. Copy `.env.example` to `.env` if you haven't already.
 2. Set `VITE_API_URL` to your NestJS API's base URL.
-3. Set `VITE_MOCK_API=false`.
+3. Set `VITE_MOCK_API=false` and the rest will work.
 
 All API calls in `src/api/*` are already typed against the endpoints in the brief (`/auth/*`, `/admin/*`, `/roads`, `/segments/*`, `/zones`). Once mock mode is off, they hit the real endpoints — no other code changes needed.
 
