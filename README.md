@@ -1,6 +1,6 @@
 # Speedway Admin
 
-Admin portal for the taxi speed-limit management system. React 18 + Vite + TypeScript, Tailwind CSS, TanStack Query, React Router v6, Recharts, and Leaflet.
+Admin portal for the taxi speed-limit management system. React 18 + Vite + TypeScript, Tailwind CSS, TanStack Query, React Router v6, Recharts, and Leaflet ORSM also added.
 
 ## Getting started
 
